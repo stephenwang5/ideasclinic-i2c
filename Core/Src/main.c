@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "i2c-communication.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -94,8 +95,11 @@ int main(void)
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  uint8_t data[10];
-  strcpy((char*)data, "hal ok\n");
+  // the following array can be used to send commands to the motors
+  float position_args[5];
+  uint8_t ready_message[20];
+  strcpy((char*)ready_message, "device rebooted\n\r");
+  HAL_UART_Transmit_IT(&huart2, ready_message, strlen((char*)ready_message));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -106,11 +110,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	// HAL_Delay(500);
-	HAL_I2C_Slave_Receive(&hi2c1, data, strlen((char*)data), HAL_MAX_DELAY);
-  HAL_I2C_Slave_Transmit(&hi2c1, I2C_MESSAGE_CONFIRM, 
-                        I2C_MESSAGE_CONFIRM_SIZEOF, HAL_MAX_DELAY)
-
-	HAL_UART_Transmit_IT(&huart2, data, strlen((char*)data));
+	receive_command(&hi2c1, position_args);
+	uint8_t demo[100];
+		sprintf((char*)demo, "%d %d %d %d %d\n\r", (int)(position_args[0]*2),
+				(int)(position_args[1]*2),
+				(int)(position_args[2]*2),
+				(int)(position_args[3]*2),
+				(int)(position_args[4]*2));
+		HAL_UART_Transmit_IT(&huart2, demo, (uint16_t)strlen((char*)demo));
   }
   /* USER CODE END 3 */
 }
